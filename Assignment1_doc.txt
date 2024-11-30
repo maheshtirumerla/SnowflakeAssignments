@@ -1,0 +1,33 @@
+CREATE OR REPLACE TABLE Patient_Records (
+  Patient_ID STRING,
+  Name STRING,
+  Diagnosis STRING,
+  AdmissionDate DATE,
+  DischargeDate DATE,
+  Data_1 STRING,
+  Data_2 STRING,
+  Data_3 STRING,
+  Data_4 STRING,
+   Data_5 STRING)
+CREATE FILE FORMAT my_csv_format TYPE=CSV
+FIELD_OPTIONALLY_ENCLOSED_BY='"';
+
+CREATE OR REPLACE STAGE patient_stage_1
+URL='s3://my-s3-patient-data/patientdata/EXTERNAL_STAGE_FILE.csv'
+CREDENTIALS=(AWS_KEY_ID='' AWS_SECRET_KEY='');
+
+COPY INTO Patient_Records
+FROM @patient_stage_1
+FILE_FORMAT = (FORMAT_NAME = 'my_csv_format');
+
+select * FROM Patient_Records
+
+
+
+CREATE MATERIALIZED VIEW AvgStayByDiagnosisPR AS
+SELECT Diagnosis, 
+       AVG(DATEDIFF(DAY, AdmissionDate, DischargeDate)) AS AvgStay
+FROM Patient_Records
+GROUP BY Diagnosis;
+
+SELECT * FROM AVGSTAYBYDIAGNOSISPR;

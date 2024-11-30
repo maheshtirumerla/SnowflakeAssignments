@@ -1,0 +1,83 @@
+
+CREATE  or replace TABLE Staging_PatientRecords (
+    patientid INT,
+    firstname STRING,
+    lastname STRING,
+    diagnosis STRING,
+    admissiondate DATE,
+    dischargedate DATE,
+    address STRING
+);
+
+INSERT INTO Staging_PatientRecords (patientid, firstname, lastname, diagnosis, admissiondate, dischargedate, address)
+VALUES
+(1, 'John', 'Doe', 'Pneumonia', '2024-11-01', '2024-11-10', '123 Maple St, Springfield'),
+(2, 'Jane', 'Smith', 'Flu', '2024-11-02', '2024-11-07', '456 Oak Ave, Rivertown'),
+(3, 'Emily', 'Johnson', 'Diabetes', '2024-11-03', '2024-11-12', '789 Pine Rd, Westbury'),
+(4, 'Michael', 'Brown', 'Heart Attack', '2024-11-04', '2024-11-14', '101 Birch Ln, Eastwood'),
+(5, 'David', 'Taylor', 'Stroke', '2024-11-05', '2024-11-13', '202 Cedar Blvd, Hillview'),
+(6, 'Olivia', 'Davis', 'COVID-19', '2024-11-06', '2024-11-15', '303 Maple Ave, Parkside'),
+(7, 'Liam', 'Wilson', 'Pneumonia', '2024-11-07', '2024-11-16', '404 Pine St, Brookstone'),
+(8, 'Sophia', 'Moore', 'Asthma', '2024-11-08', '2024-11-17', '505 Oak Rd, Clearview'),
+(9, 'James', 'Taylor', 'Flu', '2024-11-09', '2024-11-18', '606 Birch St, Pinehill'),
+(10, 'Isabella', 'Anderson', 'Kidney Infection', '2024-11-10', '2024-11-20', '707 Cedar Ave, Riverdale');
+
+
+
+select * from Staging_PatientRecords ;
+
+create or replace stream Staging_PRStream on table Staging_PatientRecords;
+
+
+INSERT INTO Staging_PatientRecords (patientid, firstname, lastname, diagnosis, admissiondate, dischargedate, address)
+VALUES
+(11, 'Ava', 'Martin', 'Anemia', '2024-11-11', '2024-11-18', '808 Elm St, Sunville'),
+(12, 'Ethan', 'Jackson', 'Back Pain', '2024-11-12', '2024-11-17', '909 Oak Dr, Greenfield')
+
+
+
+select * from Staging_PRStream ;
+
+create or replace table Final_PatientRecords (diagnosis varchar, PatientCount int);
+
+
+create or replace task TASK_Staging_PatientRecords warehouse = 'COMPUTE_WH' schedule = '1 minute' when SYSTEM$STREAM_HAS_DATA('Staging_PRStream') 
+AS insert into Final_PatientRecords select diagnosis, count(*) as patientCount 
+from Staging_PatientRecordsStream group by diagnosis;
+
+
+alter task TASK_Staging_PatientRecords resume;
+alter task TASK_Staging_PatientRecords suspend;  -- suspend
+
+select * from Staging_PRStream ; 
+select * from Final_PatientRecords; 
+
+
+CREATE or replace TABLE PatientRecords (
+    id INT,
+    firstname STRING,
+    lastname STRING,
+    diagnosis STRING,
+    admissiondate DATE,
+    dischargedate DATE,
+    adrss STRING
+);
+
+INSERT INTO PatientRecords (id, firstname, lastname, diagnosis, admissiondate, dischargedate, adrss) 
+VALUES
+(1, 'John', 'Doe', 'Pneumonia', '2024-11-01', '2024-11-10', '123 Maple St'),
+(2, 'Jane', 'Smith', 'Flu', '2024-11-02', '2024-11-07', '456 Oak Ave'),
+(3, 'Emily', 'Jones', 'Diabetes', '2024-11-03', '2024-11-12', '789 Pine Rd'),
+(4, 'Michael', 'Brown', 'Heart Attack', '2024-11-04', '2024-11-14', '101 Birch Ln'),
+(5, 'William', 'Taylor', 'Stroke', '2024-11-05', '2024-11-13', '202 Cedar Blvd'),
+(6, 'Olivia', 'Davis', 'COVID-19', '2024-11-06', '2024-11-15', '303 Maple Ave'),
+(7, 'Liam', 'Wilson', 'Pneumonia', '2024-11-07', '2024-11-16', '404 Pine St'),
+(8, 'Sophia', 'Moore', 'Asthma', '2024-11-08', '2024-11-17', '505 Oak Rd'),
+(9, 'James', 'Taylor', 'Flu', '2024-11-09', '2024-11-18', '606 Birch St'),
+(10, 'Isabella', 'Anderson', 'Kidney Infection', '2024-11-10', '2024-11-20', '707 Cedar Ave');
+
+SELECT count(*), Diagnosis from PatientRecords where admissiondate > '2024-02-01' group by diagnosis;   --Tot Time -- 110ms
+
+alter table PatientRecords cluster by (admissiondate);
+
+SELECT count(*), Diagnosis from PatientRecords where admissiondate > '2024-06-01' group by diagnosis; --Tot Time - 87ms
