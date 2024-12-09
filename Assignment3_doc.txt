@@ -1,0 +1,58 @@
+--------------------- TASK 1 ------------------
+ 
+select * from Patient_Records
+
+Create or replace table Patient_Records(customer_name varchar, credit_card varchar, region varchar);
+INSERT INTO Patient_Records values ('Tom joy','3444-3543-9806-1334','AWS_AP_SOUTH_1');
+INSERT INTO Patient_Records values ('Smith lac','8522-3254-6524-3254','AWS_AP_SOUTH_2');
+
+----creating policy--------
+
+CREATE OR REPLACE ROW ACCESS POLICY region_policy
+AS (row_region STRING) 
+RETURNS BOOLEAN ->
+CURRENT_REGION() = row_region;
+
+--Before Applying-----
+
+select * from Patient_Records
+
+----After Applying----------------
+
+ALTER TABLE Patient_Records
+ADD ROW ACCESS POLICY region_policy
+ON (region);
+
+SELECT CURRENT_REGION();  --AWS_AP_SOUTH_1
+
+Select * from Patient_Records  --- only one record retrived
+
+-----------------TaskII----------------
+
+ Select * from Patient_Records
+
+ Drop table Patient_Records
+
+ CREATE OR REPLACE TABLE Patient_Records(
+ PatientID INT,
+ Name STRING,
+ Diagnosis STRING,
+ AdmissionDate DATE
+ );
+
+ INSERT INTO Patient_Records VALUES
+ (1, 'TOM', 'FLUEE', '2024-11-01'),
+ (2, 'JIM', 'COLD', '2024-11-02'),
+ (3, 'DAE', 'JOE', '2024-11-03');
+
+-----wait for few seconds--------
+UPDATE Patient_Records
+ SET Diagnosis = 'PNEYMONIA'
+ WHERE PatientID = 1;
+
+CREATE OR REPLACE TABLE Patient_Records_Clone
+CLONE Patient_Records
+AT (OFFSET => -60); 
+
+select * from Patient_Records;
+select * from Patient_Records_Clone;
